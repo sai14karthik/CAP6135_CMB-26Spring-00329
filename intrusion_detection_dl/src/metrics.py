@@ -1,4 +1,8 @@
-"""Classification metrics aligned with the paper (confusion-matrix based)."""
+"""
+Classification metrics aligned with Section~III of the report:
+accuracy, precision, recall, F1, and FPR from the binary confusion matrix
+(attack = positive class).
+"""
 
 from __future__ import annotations
 
