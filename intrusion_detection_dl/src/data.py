@@ -16,7 +16,7 @@ def load_csv_supervised(
     drop_columns: list[str] | None = None,
     test_size: float = 0.2,
     random_state: int = 42,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str]]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Expects numeric features + a binary or multiclass label column.
     Multiclass is collapsed to binary: benign vs attack (any non-benign label).
