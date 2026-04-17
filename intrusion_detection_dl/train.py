@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""
-Train/evaluate IDS models (DNN, LSTM, Hybrid).
-
-Examples:
-  python train.py --model all
-  python train.py --model hybrid --csv /path/to/KDDTrain+.csv --label label
-
-Without --csv, uses synthetic sequences for a quick smoke test.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -40,7 +29,6 @@ def benchmark_forward_ms(
     iters: int = 100,
     is_sequence: bool,
 ) -> float:
-    """Mean wall-clock ms per sample for forward-only (eval mode)."""
     model.eval()
     n = len(X)
     x = torch.from_numpy(X[: min(n, batch_size * 4)]).float().to(device)
