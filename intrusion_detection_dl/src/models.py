@@ -1,28 +1,56 @@
-"""DNN, LSTM, and hybrid DNN+LSTM classifiers."""
+"""DNN, LSTM, and hybrid DNN+LSTM classifiers (widths match main.tex methodology)."""
 
 from __future__ import annotations
 
 import torch
 from torch import nn
 
+# Paper-aligned defaults: DNN funnel 128-64-32, dropout 0.2; LSTM hidden 64.
+DNN_HIDDEN = (128, 64, 32)
+DROPOUT_P = 0.2
+LSTM_HIDDEN = 64
+
+
+def _mlp_backbone(in_dim: int, hidden: tuple[int, ...], dropout_p: float) -> tuple[nn.Sequential, int]:
+    layers: list[nn.Module] = []
+    d = in_dim
+    for h in hidden:
+        layers += [nn.Linear(d, h), nn.ReLU(), nn.Dropout(dropout_p)]
+        d = h
+    return nn.Sequential(*layers), d
+
 
 class DNNClassifier(nn.Module):
-    def __init__(self, in_dim: int, hidden: tuple[int, ...] = (128, 64, 32), num_classes: int = 2):
+    """Three-layer dense stack (128-64-32) + logits, as in the report."""
+
+    def __init__(
+        self,
+        in_dim: int,
+        hidden: tuple[int, ...] = DNN_HIDDEN,
+        dropout_p: float = DROPOUT_P,
+        num_classes: int = 2,
+    ):
         super().__init__()
-        layers: list[nn.Module] = []
-        d = in_dim
-        for h in hidden:
-            layers += [nn.Linear(d, h), nn.ReLU(), nn.Dropout(0.2)]
-            d = h
-        layers.append(nn.Linear(d, num_classes))
-        self.net = nn.Sequential(*layers)
+        body, d = _mlp_backbone(in_dim, hidden, dropout_p)
+        self.net = nn.Sequential(body, nn.Linear(d, num_classes))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
 
 
 class LSTMClassifier(nn.Module):
-    def __init__(self, n_features: int, hidden: int = 64, num_layers: int = 1, num_classes: int = 2):
+    """
+    Single-layer LSTM over the sequence; tables use ``RNN'' per IDS convention
+    but the cell is LSTM as in Section~III of the report.
+    """
+
+    def __init__(
+        self,
+        n_features: int,
+        hidden: int = LSTM_HIDDEN,
+        num_layers: int = 1,
+        num_classes: int = 2,
+    ):
         super().__init__()
         self.lstm = nn.LSTM(
             input_size=n_features,
@@ -39,17 +67,23 @@ class LSTMClassifier(nn.Module):
 
 
 class HybridDNNLSTM(nn.Module):
-    """Per-sequence timestep passed through a small MLP; LSTM over timestep embeddings."""
+    """
+    Same 128-64-32 dense funnel as the standalone DNN, applied per timestep,
+    then a single-layer LSTM (hidden 64) and linear classifier (hybrid DNN--RNN).
+    """
 
-    def __init__(self, n_features: int, mlp_hidden: int = 32, lstm_hidden: int = 64, num_classes: int = 2):
+    def __init__(
+        self,
+        n_features: int,
+        dnn_hidden: tuple[int, ...] = DNN_HIDDEN,
+        dropout_p: float = DROPOUT_P,
+        lstm_hidden: int = LSTM_HIDDEN,
+        num_classes: int = 2,
+    ):
         super().__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(n_features, mlp_hidden),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-        )
+        self.mlp, lstm_in = _mlp_backbone(n_features, dnn_hidden, dropout_p)
         self.lstm = nn.LSTM(
-            input_size=mlp_hidden,
+            input_size=lstm_in,
             hidden_size=lstm_hidden,
             num_layers=1,
             batch_first=True,
