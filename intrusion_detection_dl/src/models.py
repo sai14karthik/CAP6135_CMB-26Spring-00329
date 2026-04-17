@@ -1,11 +1,9 @@
-"""DNN, LSTM, and hybrid DNN+LSTM classifiers (widths match main.tex methodology)."""
 
 from __future__ import annotations
 
 import torch
 from torch import nn
 
-# Paper-aligned defaults: DNN funnel 128-64-32, dropout 0.2; LSTM hidden 64.
 DNN_HIDDEN = (128, 64, 32)
 DROPOUT_P = 0.2
 LSTM_HIDDEN = 64
@@ -21,7 +19,6 @@ def _mlp_backbone(in_dim: int, hidden: tuple[int, ...], dropout_p: float) -> tup
 
 
 class DNNClassifier(nn.Module):
-    """Three-layer dense stack (128-64-32) + logits, as in the report."""
 
     def __init__(
         self,
@@ -39,10 +36,7 @@ class DNNClassifier(nn.Module):
 
 
 class LSTMClassifier(nn.Module):
-    """
-    Single-layer LSTM over the sequence; tables use ``RNN'' per IDS convention
-    but the cell is LSTM as in Section~III of the report.
-    """
+   
 
     def __init__(
         self,
@@ -67,10 +61,7 @@ class LSTMClassifier(nn.Module):
 
 
 class HybridDNNLSTM(nn.Module):
-    """
-    Same 128-64-32 dense funnel as the standalone DNN, applied per timestep,
-    then a single-layer LSTM (hidden 64) and linear classifier (hybrid DNN--RNN).
-    """
+
 
     def __init__(
         self,

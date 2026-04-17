@@ -1,4 +1,3 @@
-"""Load NSL-KDD / CICIDS-style CSVs or synthetic data for smoke tests."""
 
 from __future__ import annotations
 
@@ -17,10 +16,7 @@ def load_csv_supervised(
     test_size: float = 0.2,
     random_state: int = 42,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Expects numeric features + a binary or multiclass label column.
-    Multiclass is collapsed to binary: benign vs attack (any non-benign label).
-    """
+    
     path = Path(csv_path)
     if not path.is_file():
         raise FileNotFoundError(f"Dataset not found: {path}")
@@ -52,11 +48,7 @@ def make_synthetic_sequences(
     n_features: int = 16,
     random_state: int = 0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Toy sequences for end-to-end smoke test without external CSVs.
-    X_flat: (n_samples, seq_len * n_features) for DNN.
-    X_seq: (n_samples, seq_len, n_features) for RNN/hybrid.
-    """
+   
     rng = np.random.default_rng(random_state)
     X_seq = rng.normal(size=(n_samples, seq_len, n_features)).astype(np.float32)
     y = rng.integers(0, 2, size=n_samples, dtype=np.int64)

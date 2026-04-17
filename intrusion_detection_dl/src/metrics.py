@@ -1,8 +1,4 @@
-"""
-Classification metrics aligned with Section~III of the report:
-accuracy, precision, recall, F1, and FPR from the binary confusion matrix
-(attack = positive class).
-"""
+
 
 from __future__ import annotations
 
@@ -11,7 +7,6 @@ from sklearn.metrics import confusion_matrix
 
 
 def binary_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
-    """Malicious = positive class (label 1). Returns rates in [0, 1]."""
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     denom = tp + tn + fp + fn
     acc = (tp + tn) / denom if denom else 0.0
