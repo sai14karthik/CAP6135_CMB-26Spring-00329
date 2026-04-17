@@ -27,6 +27,33 @@ from src.data import load_csv_supervised, make_synthetic_sequences
 from src.metrics import binary_metrics
 from src.models import DNNClassifier, HybridDNNLSTM, LSTMClassifier
 
+import time
+
+
+def benchmark_forward_ms(
+    model: nn.Module,
+    X: np.ndarray,
+    device: torch.device,
+    *,
+    batch_size: int = 256,
+    warmup: int = 20,
+    iters: int = 100,
+    is_sequence: bool,
+) -> float:
+    """Mean wall-clock ms per sample for forward-only (eval mode)."""
+    model.eval()
+    n = len(X)
+    x = torch.from_numpy(X[: min(n, batch_size * 4)]).float().to(device)
+    with torch.no_grad():
+        for _ in range(warmup):
+            _ = model(x)
+        t0 = time.perf_counter()
+        for _ in range(iters):
+            _ = model(x)
+        t1 = time.perf_counter()
+    total_samples = iters * x.shape[0]
+    return (t1 - t0) * 1000.0 / total_samples
+
 
 def train_one(
     model: nn.Module,
@@ -88,6 +115,11 @@ def main() -> None:
     p.add_argument("--batch-size", type=int, default=128)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument(
+        "--bench",
+        action="store_true",
+        help="After training, print mean forward-pass ms/sample for each model (GPU/CPU dependent).",
+    )
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -131,6 +163,9 @@ def main() -> None:
             f"{name:6s}  acc={m['accuracy']:.4f}  prec={m['precision']:.4f}  "
             f"rec={m['recall']:.4f}  f1={m['f1']:.4f}  fpr={m['fpr']:.4f}"
         )
+        if args.bench:
+            ms = benchmark_forward_ms(model, Xte, device, is_sequence=is_seq)
+            print(f"        forward: {ms:.4f} ms/sample (batch={min(256, len(Xte))}, see --bench)")
 
 
 if __name__ == "__main__":
